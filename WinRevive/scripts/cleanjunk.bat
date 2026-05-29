@@ -1,0 +1,16 @@
+@echo off
+setlocal enabledelayedexpansion
+title WinRevive - Clean Junk
+
+echo Scanning Temp folders...
+del /q /f /s "%TEMP%\*" 2>nul
+echo Clearing Windows Temp...
+del /q /f /s "%SystemRoot%\Temp\*" 2>nul
+echo Clearing Prefetch...
+del /q /f /s "%SystemRoot%\Prefetch\*" 2>nul
+echo Flushing DNS cache...
+ipconfig /flushdns >nul
+echo Emptying Recycle Bin...
+rd /s /q "%SystemDrive%\$RECYCLE.BIN" 2>nul
+echo Junk cleanup complete.
+endlocal

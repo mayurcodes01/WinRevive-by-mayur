@@ -1,0 +1,46 @@
+{
+  "name": "winrevive",
+  "version": "1.0.0",
+  "description": "Windows Recovery and Optimization Suite",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win portable",
+    "build-installer": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^42.3.0",
+    "electron-builder": "^26.8.1"
+  },
+  "build": {
+    "appId": "com.winrevive.app",
+    "productName": "WinRevive",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "scripts/**/*",
+      "assets/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.png"
+    },
+    "portable": {
+      "artifactName": "WinRevive.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "WinRevive-Setup.exe"
+    }
+  }
+}

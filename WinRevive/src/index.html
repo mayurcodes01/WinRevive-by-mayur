@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WinRevive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #080808;
+    --bg2:      #101010;
+    --bg3:      #181818;
+    --bg4:      #202020;
+    --border:   #1e1e1e;
+    --border2:  #2c2c2c;
+    --border3:  #383838;
+    --text:     #f2f2f2;
+    --text2:    #888888;
+    --text3:    #3e3e3e;
+    --accent:   #ffffff;
+    --green:    #4ade80;
+    --red:      #f87171;
+    --yellow:   #fbbf24;
+    --radius:   12px;
+    --radius-sm:8px;
+    --font:     'JetBrains Mono', monospace;
+    --blur:     blur(18px);
+    --blur-sm:  blur(10px);
+    --w: 100vw;
+    --h: 100vh;
+    --titlebar-h: 44px;
+    --tabs-h: 38px;
+  }
+
+  [data-theme="light"] {
+    --bg:      #f0f0f0; --bg2: #e8e8e8; --bg3: #dedede; --bg4: #d4d4d4;
+    --border:  #cccccc; --border2: #b8b8b8; --border3: #a0a0a0;
+    --text:    #0a0a0a; --text2: #555555; --text3: #aaaaaa; --accent: #000000;
+  }
+
+  [data-theme="dark-blue"] {
+    --bg:      #04060e; --bg2: #080c18; --bg3: #0d1222; --bg4: #12192e;
+    --border:  #18243a; --border2: #22304e; --border3: #2e4068;
+    --text:    #e4eaff; --text2: #6878a8; --text3: #283050; --accent: #6ea0ff;
+  }
+
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; font-family:var(--font); }
+
+  html, body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: transparent;
+  }
+
+  body { color:var(--text); font-size:12px; user-select:none; -webkit-font-smoothing:antialiased; }
+
+  /* ─── APP SHELL ─── */
+  #app {
+    width: var(--w);
+    height: var(--h);
+    background: var(--bg);
+    border-radius: var(--radius);
+    border: 1px solid var(--border2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.04) inset, 0 32px 80px rgba(0,0,0,0.8), 0 4px 20px rgba(0,0,0,0.6);
+    position: relative;
+  }
+
+  #app::before {
+    content:'';
+    position:absolute; inset:0;
+    border-radius:var(--radius);
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events:none; z-index:0;
+  }
+
+  /* ─── TITLEBAR ─── */
+  #titlebar {
+    display:flex; align-items:center; justify-content:space-between;
+    height: var(--titlebar-h);
+    padding:0 20px;
+    background:rgba(10,10,10,0.85);
+    backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
+    border-bottom:1px solid var(--border);
+    -webkit-app-region:drag;
+    flex-shrink:0; position:relative; z-index:10;
+  }
+
+  .title-left { display:flex; align-items:center; gap:10px; }
+
+  .logo-mark {
+    width:22px; height:22px;
+    border:1.5px solid var(--accent);
+    display:grid; grid-template-columns:1fr 1fr;
+    gap:3px; padding:4px; border-radius:4px;
+    animation:logoPulse 6s ease-in-out infinite;
+  }
+  @keyframes logoPulse {
+    0%,100%{border-color:var(--accent);opacity:1;}
+    50%{border-color:var(--text2);opacity:0.6;}
+  }
+  .logo-dot { background:var(--accent); border-radius:1px; transition:opacity 0.3s; }
+
+  .title-text { font-size:12px; font-weight:700; letter-spacing:0.2em; color:var(--text); text-transform:uppercase; }
+  .title-version { font-size:10px; color:var(--text3); letter-spacing:0.06em; margin-top:1px; }
+
+  .title-right { display:flex; align-items:center; gap:10px; -webkit-app-region:no-drag; }
+
+  .title-status { display:flex; align-items:center; gap:6px; font-size:10px; color:var(--text2); letter-spacing:0.08em; }
+
+  .status-led {
+    width:6px; height:6px; border-radius:50%;
+    background:var(--green); box-shadow:0 0 6px var(--green);
+    animation:ledPulse 2.5s ease-in-out infinite;
+  }
+  @keyframes ledPulse {
+    0%,100%{opacity:1;box-shadow:0 0 6px var(--green);}
+    50%{opacity:0.4;box-shadow:0 0 2px var(--green);}
+  }
+
+  .win-controls { display:flex; gap:6px; }
+  .win-btn {
+    width:28px; height:28px;
+    border:1px solid var(--border2); background:var(--bg2);
+    color:var(--text2); cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; transition:all 0.15s ease; border-radius:var(--radius-sm);
+  }
+  .win-btn:hover { background:var(--bg3); color:var(--text); border-color:var(--border3); }
+  .win-btn.close:hover { background:var(--red); color:#fff; border-color:var(--red); box-shadow:0 0 10px rgba(248,113,113,0.3); }
+
+  /* ─── TABS ─── */
+  #tabs {
+    display:flex; padding:0 20px;
+    background:rgba(10,10,10,0.6);
+    backdrop-filter:var(--blur-sm); -webkit-backdrop-filter:var(--blur-sm);
+    border-bottom:1px solid var(--border);
+    flex-shrink:0; gap:2px; position:relative; z-index:9;
+    height: var(--tabs-h);
+  }
+
+  .tab {
+    padding:10px 16px;
+    font-size:10px; font-weight:500; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--text3); cursor:pointer;
+    border-bottom:2px solid transparent;
+    transition:all 0.2s ease; position:relative; margin-bottom:-1px; white-space:nowrap;
+  }
+  .tab:hover { color:var(--text2); }
+  .tab.active { color:var(--text); border-bottom-color:var(--accent); }
+
+  /* ─── CONTENT AREA ─── */
+  #content {
+    flex:1;
+    overflow:hidden;
+    position:relative;
+    height: calc(var(--h) - var(--titlebar-h) - var(--tabs-h));
+  }
+
+  .panel { display:none; height:100%; flex-direction:column; animation:panelIn 0.2s ease; }
+  .panel.active { display:flex; }
+  @keyframes panelIn {
+    from{opacity:0;transform:translateY(6px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+  ::-webkit-scrollbar-thumb:hover { background:var(--border3); }
+
+  .section-label {
+    font-size:9px; font-weight:600; letter-spacing:0.22em;
+    color:var(--text3); text-transform:uppercase; padding:0 2px;
+  }
+
+  /* ─── TOOLS PANEL ─── */
+  #panel-tools { padding:16px 20px; gap:12px; overflow-y:auto; }
+
+  .status-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+
+  .status-chip {
+    background:rgba(255,255,255,0.02);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:10px 14px;
+    display:flex; flex-direction:column; gap:3px;
+    backdrop-filter:var(--blur-sm); -webkit-backdrop-filter:var(--blur-sm);
+    transition:border-color 0.2s;
+  }
+  .status-chip:hover { border-color:var(--border2); }
+  .chip-val { font-size:15px; font-weight:600; color:var(--text); letter-spacing:0.04em; line-height:1; }
+  .chip-key { font-size:9px; color:var(--text3); letter-spacing:0.14em; text-transform:uppercase; }
+
+  .tool-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  .tool-btn {
+    background:rgba(255,255,255,0.025);
+    border:1px solid var(--border);
+    color:var(--text2);
+    padding:13px 16px;
+    cursor:pointer; text-align:left;
+    transition:all 0.18s ease;
+    border-radius:var(--radius-sm);
+    position:relative; overflow:hidden;
+    backdrop-filter:var(--blur-sm); -webkit-backdrop-filter:var(--blur-sm);
+  }
+  .tool-btn::before {
+    content:''; position:absolute; top:0; left:0;
+    width:2px; height:100%; background:var(--accent);
+    transform:scaleY(0); transition:transform 0.2s ease;
+    transform-origin:bottom; border-radius:0 1px 1px 0;
+  }
+  .tool-btn::after {
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(135deg,rgba(255,255,255,0.03) 0%,transparent 60%);
+    opacity:0; transition:opacity 0.2s; border-radius:var(--radius-sm);
+  }
+  .tool-btn:hover {
+    background:rgba(255,255,255,0.05); color:var(--text);
+    border-color:var(--border2); transform:translateY(-1px);
+    box-shadow:0 4px 16px rgba(0,0,0,0.4);
+  }
+  .tool-btn:hover::before { transform:scaleY(1); }
+  .tool-btn:hover::after  { opacity:1; }
+  .tool-btn:active { transform:scale(0.98) translateY(0); }
+  .tool-btn.running {
+    border-color:var(--accent); color:var(--text);
+    background:rgba(255,255,255,0.05);
+    animation:runPulse 1.2s ease-in-out infinite;
+  }
+  @keyframes runPulse {
+    0%,100%{border-color:var(--accent);box-shadow:0 0 0 rgba(255,255,255,0);}
+    50%{border-color:var(--border2);box-shadow:0 0 12px rgba(255,255,255,0.06);}
+  }
+
+  .btn-icon { font-size:17px; margin-bottom:6px; display:block; opacity:0.6; line-height:1; }
+  .btn-label { font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; display:block; color:var(--text); margin-bottom:2px; }
+  .btn-desc  { font-size:10px; color:var(--text3); display:block; letter-spacing:0.04em; }
+
+  /* ─── LOG PANEL ─── */
+  #panel-log { flex-direction:column; }
+
+  .log-toolbar {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 20px;
+    border-bottom:1px solid var(--border);
+    flex-shrink:0;
+    background:rgba(10,10,10,0.5);
+    backdrop-filter:var(--blur-sm); -webkit-backdrop-filter:var(--blur-sm);
+  }
+  .log-title { font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--text3); font-weight:500; }
+  .log-actions { display:flex; gap:8px; }
+
+  .log-btn {
+    background:var(--bg2); border:1px solid var(--border2);
+    color:var(--text3); padding:5px 12px; font-size:10px;
+    cursor:pointer; letter-spacing:0.1em; text-transform:uppercase;
+    border-radius:var(--radius-sm); font-family:var(--font); transition:all 0.15s;
+  }
+  .log-btn:hover { color:var(--text); border-color:var(--border3); background:var(--bg3); }
+
+  #log-output {
+    flex:1; padding:14px 20px; overflow-y:auto;
+    font-size:11px; line-height:1.8; color:var(--text2);
+    background:var(--bg);
+  }
+
+  .log-line {
+    display:flex; gap:14px; align-items:baseline;
+    animation:logIn 0.12s ease; padding:1px 0;
+  }
+  @keyframes logIn {
+    from{opacity:0;transform:translateX(-6px);}
+    to{opacity:1;transform:translateX(0);}
+  }
+  .log-time  { color:var(--text3); flex-shrink:0; font-size:10px; letter-spacing:0.02em; min-width:66px; }
+  .log-prefix{ color:var(--text3); flex-shrink:0; font-size:10px; }
+  .log-msg   { color:var(--text2); word-break:break-all; }
+  .log-msg.success { color:var(--green); }
+  .log-msg.error   { color:var(--red); }
+  .log-msg.warn    { color:var(--yellow); }
+  .log-msg.info    { color:var(--text); }
+
+  .log-empty { color:var(--text3); font-size:11px; letter-spacing:0.06em; text-align:center; margin-top:60px; line-height:1.9; }
+
+  .progress-wrap {
+    padding:10px 20px;
+    border-top:1px solid var(--border);
+    flex-shrink:0;
+    background:rgba(10,10,10,0.5);
+    backdrop-filter:var(--blur-sm); -webkit-backdrop-filter:var(--blur-sm);
+  }
+  .progress-label {
+    display:flex; justify-content:space-between; margin-bottom:6px;
+    font-size:10px; color:var(--text3); letter-spacing:0.12em; text-transform:uppercase;
+  }
+  .progress-bar { height:2px; background:var(--bg3); border-radius:1px; overflow:hidden; }
+  .progress-fill {
+    height:100%; background:var(--accent); border-radius:1px;
+    width:0%; transition:width 0.35s ease;
+    box-shadow:0 0 6px rgba(255,255,255,0.2);
+  }
+
+  /* ─── SYSTEM INFO PANEL ─── */
+  #panel-info { padding:16px 20px; gap:14px; overflow-y:auto; }
+
+  .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  .info-card {
+    background:rgba(255,255,255,0.02); border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:12px 16px;
+    backdrop-filter:var(--blur-sm); -webkit-backdrop-filter:var(--blur-sm);
+    transition:border-color 0.2s;
+  }
+  .info-card:hover { border-color:var(--border2); }
+  .info-card-key { font-size:9px; color:var(--text3); letter-spacing:0.18em; text-transform:uppercase; margin-bottom:5px; }
+  .info-card-val { font-size:13px; color:var(--text); font-weight:500; letter-spacing:0.04em; word-break:break-all; }
+  .info-card.span2 { grid-column:span 2; }
+
+  .info-status-dot {
+    width:7px; height:7px; border-radius:50%;
+    display:inline-block; margin-right:8px;
+    background:var(--green); box-shadow:0 0 6px var(--green);
+    animation:ledPulse 2.5s ease-in-out infinite; vertical-align:middle;
+  }
+
+  /* ─── SETTINGS PANEL ─── */
+  #panel-settings { padding:16px 20px; gap:12px; overflow-y:auto; }
+
+  .setting-group {
+    background:rgba(255,255,255,0.02); border:1px solid var(--border);
+    border-radius:var(--radius-sm); overflow:hidden;
+    backdrop-filter:var(--blur-sm); -webkit-backdrop-filter:var(--blur-sm);
+  }
+  .setting-group-title {
+    padding:8px 16px; font-size:9px; letter-spacing:0.2em;
+    text-transform:uppercase; color:var(--text3);
+    border-bottom:1px solid var(--border);
+    background:rgba(255,255,255,0.015); font-weight:600;
+  }
+  .setting-item {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:11px 16px; border-bottom:1px solid var(--border);
+    transition:background 0.15s; gap:16px;
+  }
+  .setting-item:last-child { border-bottom:none; }
+  .setting-item:hover { background:rgba(255,255,255,0.02); }
+  .setting-name { font-size:12px; color:var(--text); letter-spacing:0.03em; font-weight:400; }
+  .setting-desc { font-size:10px; color:var(--text3); margin-top:3px; letter-spacing:0.02em; }
+
+  .toggle { position:relative; width:36px; height:20px; flex-shrink:0; }
+  .toggle input { opacity:0; width:0; height:0; }
+  .toggle-slider {
+    position:absolute; cursor:pointer; inset:0;
+    background:var(--bg3); border:1px solid var(--border2);
+    border-radius:10px; transition:0.2s ease;
+  }
+  .toggle-slider::before {
+    content:''; position:absolute;
+    width:12px; height:12px; left:3px; top:3px;
+    background:var(--text3); border-radius:50%; transition:0.2s ease;
+  }
+  .toggle input:checked + .toggle-slider { background:var(--accent); border-color:var(--accent); box-shadow:0 0 8px rgba(255,255,255,0.15); }
+  .toggle input:checked + .toggle-slider::before { transform:translateX(16px); background:var(--bg); }
+
+  .theme-picker { display:flex; gap:10px; }
+  .theme-dot {
+    width:24px; height:24px; border-radius:50%; cursor:pointer;
+    border:2px solid transparent; transition:all 0.18s; position:relative;
+  }
+  .theme-dot:hover  { transform:scale(1.15); border-color:var(--border3); }
+  .theme-dot.active { border-color:var(--accent); box-shadow:0 0 8px rgba(255,255,255,0.2); }
+  .theme-dot[data-theme="default"]   { background:radial-gradient(circle at 35% 35%,#2a2a2a,#080808); }
+  .theme-dot[data-theme="light"]     { background:radial-gradient(circle at 35% 35%,#ffffff,#d0d0d0); }
+  .theme-dot[data-theme="dark-blue"] { background:radial-gradient(circle at 35% 35%,#1e3070,#04060e); }
+
+  /* ─── NOTIFICATION ─── */
+  #notification {
+    position:fixed; bottom:16px; right:16px;
+    background:rgba(20,20,20,0.9);
+    backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
+    border:1px solid var(--border2); border-radius:var(--radius-sm);
+    padding:9px 14px; font-size:11px; color:var(--text2);
+    letter-spacing:0.04em; opacity:0; transform:translateY(10px);
+    transition:all 0.22s ease; pointer-events:none;
+    z-index:999; max-width:220px; box-shadow:0 8px 24px rgba(0,0,0,0.5);
+  }
+  #notification.show   { opacity:1; transform:translateY(0); }
+  #notification.success{ border-left:3px solid var(--green); }
+  #notification.error  { border-left:3px solid var(--red); }
+  #notification.info   { border-left:3px solid var(--border3); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TITLEBAR -->
+  <div id="titlebar">
+    <div class="title-left">
+      <div class="logo-mark">
+        <div class="logo-dot"></div><div class="logo-dot"></div>
+        <div class="logo-dot"></div><div class="logo-dot"></div>
+      </div>
+      <span class="title-text">WinRevive</span>
+      <span class="title-version">v1.0</span>
+    </div>
+    <div class="title-right">
+      <div class="title-status">
+        <span class="status-led"></span>
+        <span id="status-text">System Ready</span>
+      </div>
+      <div class="win-controls">
+        <button class="win-btn" id="btn-min">&#8722;</button>
+        <button class="win-btn close" id="btn-close">&#215;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div id="tabs">
+    <div class="tab active" data-tab="tools">Tools</div>
+    <div class="tab" data-tab="log">Output</div>
+    <div class="tab" data-tab="info">System</div>
+    <div class="tab" data-tab="settings">Settings</div>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="content">
+
+    <!-- TOOLS PANEL -->
+    <div class="panel active" id="panel-tools">
+      <div class="status-row">
+        <div class="status-chip">
+          <span class="chip-val" id="chip-mem">--</span>
+          <span class="chip-key">RAM Free</span>
+        </div>
+        <div class="status-chip">
+          <span class="chip-val" id="chip-cpu">--</span>
+          <span class="chip-key">CPU Cores</span>
+        </div>
+        <div class="status-chip">
+          <span class="chip-val" id="chip-uptime">--</span>
+          <span class="chip-key">Uptime</span>
+        </div>
+      </div>
+
+      <div class="section-label">Recovery</div>
+      <div class="tool-grid">
+        <button class="tool-btn" data-task="repair" data-script="repair.bat">
+          <span class="btn-icon">&#9881;</span>
+          <span class="btn-label">Repair Windows</span>
+          <span class="btn-desc">SFC + DISM integrity scan</span>
+        </button>
+        <button class="tool-btn" data-task="restore" data-script="restore.bat">
+          <span class="btn-icon">&#9679;</span>
+          <span class="btn-label">Restore Point</span>
+          <span class="btn-desc">Create system checkpoint</span>
+        </button>
+      </div>
+
+      <div class="section-label">Optimization</div>
+      <div class="tool-grid">
+        <button class="tool-btn" data-task="junk" data-script="cleanjunk.bat">
+          <span class="btn-icon">&#9632;</span>
+          <span class="btn-label">Clean Junk</span>
+          <span class="btn-desc">Temp, cache and prefetch</span>
+        </button>
+        <button class="tool-btn" data-task="internet" data-script="fixnet.bat">
+          <span class="btn-icon">&#8635;</span>
+          <span class="btn-label">Fix Internet</span>
+          <span class="btn-desc">TCP/IP, DNS and Winsock</span>
+        </button>
+      </div>
+
+      <div class="section-label">Security + Diagnostics</div>
+      <div class="tool-grid">
+        <button class="tool-btn" data-task="malware" data-script="malwarescan.bat">
+          <span class="btn-icon">&#9650;</span>
+          <span class="btn-label">Malware Scan</span>
+          <span class="btn-desc">Detect startup anomalies</span>
+        </button>
+        <button class="tool-btn" data-task="diagnostics" data-script="diagnostics.py">
+          <span class="btn-icon">&#9642;</span>
+          <span class="btn-label">Diagnostics</span>
+          <span class="btn-desc">Full system report export</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- LOG PANEL -->
+    <div class="panel" id="panel-log">
+      <div class="log-toolbar">
+        <span class="log-title">Console Output</span>
+        <div class="log-actions">
+          <button class="log-btn" id="btn-save-log">Save Log</button>
+          <button class="log-btn" id="btn-clear-log">Clear</button>
+          <button class="log-btn" id="btn-open-logs">Open Folder</button>
+        </div>
+      </div>
+      <div id="log-output">
+        <div class="log-empty">No output yet.<br>Run a tool from the Tools tab to begin.</div>
+      </div>
+      <div class="progress-wrap" id="progress-wrap" style="display:none">
+        <div class="progress-label">
+          <span id="progress-task">Running...</span>
+          <span id="progress-pct">0%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      </div>
+    </div>
+
+    <!-- SYSTEM INFO PANEL -->
+    <div class="panel" id="panel-info">
+      <div class="section-label">System Information</div>
+      <div class="info-grid" id="info-grid">
+        <div class="info-card">
+          <div class="info-card-key">Status</div>
+          <div class="info-card-val"><span class="info-status-dot"></span>Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS PANEL -->
+    <div class="panel" id="panel-settings">
+      <div class="section-label">Appearance</div>
+      <div class="setting-group">
+        <div class="setting-group-title">Theme</div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-name">Color Theme</div>
+            <div class="setting-desc">Switch between dark, light and dark-blue</div>
+          </div>
+          <div class="theme-picker">
+            <div class="theme-dot active" data-theme="default" title="Dark"></div>
+            <div class="theme-dot" data-theme="light" title="Light"></div>
+            <div class="theme-dot" data-theme="dark-blue" title="Dark Blue"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">Behavior</div>
+      <div class="setting-group">
+        <div class="setting-group-title">Options</div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-name">Auto-scroll Log</div>
+            <div class="setting-desc">Automatically scroll to the latest output line</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-autoscroll" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-name">Demo Mode</div>
+            <div class="setting-desc">Simulate all tasks without running real commands</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-demo" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-name">Save Logs</div>
+            <div class="setting-desc">Auto-export console output to WinRevive_Logs folder</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-savelogs" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="section-label">About</div>
+      <div class="setting-group">
+        <div class="setting-group-title">WinRevive</div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-name">Version</div>
+            <div class="setting-desc">Current build number</div>
+          </div>
+          <span style="font-size:11px;color:var(--text2)">1.0.0</span>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-name">Stack</div>
+            <div class="setting-desc">Runtime and scripting engines</div>
+          </div>
+          <span style="font-size:11px;color:var(--text2)">Electron + BAT + Python</span>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-name">Window Size</div>
+            <div class="setting-desc">Fixed application dimensions</div>
+          </div>
+          <span style="font-size:11px;color:var(--text2)">Resizable (min 620×500)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div id="notification"></div>
+
+<script>
+// All IPC goes through window.electron (contextBridge)
+const api = window.electron;
+
+// ─── TAB SWITCHING ─────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ─── WINDOW CONTROLS ───────────────────────────────────────────
+document.getElementById('btn-min').addEventListener('click', () => api.send('minimize-window'));
+document.getElementById('btn-close').addEventListener('click', () => api.send('close-window'));
+
+// ─── NOTIFICATIONS ─────────────────────────────────────────────
+function notify(msg, type = 'info') {
+  const n = document.getElementById('notification');
+  n.textContent = msg;
+  n.className = 'show ' + type;
+  clearTimeout(n._t);
+  n._t = setTimeout(() => n.className = '', 3000);
+}
+
+// ─── LOG ───────────────────────────────────────────────────────
+const logOutput = document.getElementById('log-output');
+let logLines    = [];
+let currentTask = '';
+
+function addLog(msg, type = '') {
+  msg = msg.trim();
+  if (!msg) return;
+  if (logLines.length === 0) logOutput.innerHTML = '';
+
+  const time = new Date().toLocaleTimeString('en', { hour12: false });
+  const t    = type || detectLogType(msg);
+
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="log-time">${time}</span><span class="log-prefix">&gt;</span><span class="log-msg ${t}">${escapeHtml(msg)}</span>`;
+  logOutput.appendChild(line);
+  logLines.push(`[${time}] ${msg}`);
+
+  if (document.getElementById('toggle-autoscroll').checked)
+    logOutput.scrollTop = logOutput.scrollHeight;
+}
+
+function detectLogType(msg) {
+  const m = msg.toLowerCase();
+  if (m.includes('error') || m.includes('failed') || m.includes('not found')) return 'error';
+  if (m.includes('warn')  || m.includes('restart'))                           return 'warn';
+  if (m.includes('complete') || m.includes('success') || m.includes('healthy') ||
+      m.includes('clean') || m.includes('saved'))                             return 'success';
+  if (m.includes('checking') || m.includes('running')  || m.includes('scanning') ||
+      m.includes('starting') || m.includes('collecting') || m.includes('reading') ||
+      m.includes('analyzing') || m.includes('generating'))                    return 'info';
+  return '';
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── IPC: incoming script output ───────────────────────────────
+api.on('script-output', (data) => {
+  data.split('\n').forEach(l => { if (l.trim()) addLog(l); });
+});
+
+// ─── IPC: log-saved confirmation ───────────────────────────────
+api.on('log-saved', (result) => {
+  if (result.success) {
+    notify('Log saved to WinRevive_Logs', 'success');
+  } else {
+    notify('Failed to save log: ' + result.error, 'error');
+  }
+});
+
+// ─── SAVE LOG BUTTON ───────────────────────────────────────────
+document.getElementById('btn-save-log').addEventListener('click', () => {
+  if (logLines.length === 0) { notify('Nothing to save', 'info'); return; }
+  api.send('save-log', { taskName: currentTask || 'manual', lines: logLines });
+});
+
+// ─── CLEAR LOG ─────────────────────────────────────────────────
+document.getElementById('btn-clear-log').addEventListener('click', () => {
+  logOutput.innerHTML = '<div class="log-empty">No output yet.<br>Run a tool from the Tools tab to begin.</div>';
+  logLines = [];
+  currentTask = '';
+});
+
+// ─── OPEN LOGS FOLDER ──────────────────────────────────────────
+document.getElementById('btn-open-logs').addEventListener('click', () => {
+  api.send('open-logs');
+  notify('Opened WinRevive_Logs folder', 'info');
+});
+
+// ─── PROGRESS ──────────────────────────────────────────────────
+let progressInterval;
+
+function startProgress(name) {
+  const wrap = document.getElementById('progress-wrap');
+  const fill = document.getElementById('progress-fill');
+  const pct  = document.getElementById('progress-pct');
+  const lbl  = document.getElementById('progress-task');
+  wrap.style.display = 'block';
+  lbl.textContent = name.toUpperCase();
+  let val = 0;
+  fill.style.width = '0%';
+  pct.textContent  = '0%';
+  progressInterval = setInterval(() => {
+    val += Math.random() * 9;
+    if (val > 92) val = 92;
+    fill.style.width = val + '%';
+    pct.textContent  = Math.floor(val) + '%';
+  }, 280);
+}
+
+function endProgress() {
+  clearInterval(progressInterval);
+  const fill = document.getElementById('progress-fill');
+  const pct  = document.getElementById('progress-pct');
+  fill.style.width = '100%';
+  pct.textContent  = '100%';
+  setTimeout(() => {
+    document.getElementById('progress-wrap').style.display = 'none';
+    fill.style.width = '0%';
+  }, 900);
+}
+
+// ─── TOOL BUTTONS ──────────────────────────────────────────────
+let isRunning = false;
+
+document.querySelectorAll('.tool-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    if (isRunning) { notify('A task is already running', 'info'); return; }
+
+    const task   = btn.dataset.task;
+    const script = btn.dataset.script;
+    const demo   = document.getElementById('toggle-demo').checked;
+    const saveLogs = document.getElementById('toggle-savelogs').checked;
+
+    currentTask = task;
+    isRunning   = true;
+    btn.classList.add('running');
+    document.getElementById('status-text').textContent = 'Running ' + task + '...';
+
+    // Switch to log tab
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelector('[data-tab="log"]').classList.add('active');
+    document.getElementById('panel-log').classList.add('active');
+
+    addLog('Starting: ' + task.toUpperCase(), 'info');
+    startProgress(task);
+
+    try {
+      let res;
+      if (demo)                     res = await api.invoke('run-demo', task);
+      else if (script.endsWith('.py')) res = await api.invoke('run-python', script);
+      else                          res = await api.invoke('run-bat', script);
+
+      endProgress();
+      addLog(
+        res.success ? 'Task completed successfully.' : 'Task finished with errors.',
+        res.success ? 'success' : 'error'
+      );
+      notify(res.success ? 'Done: ' + task : 'Error: ' + task, res.success ? 'success' : 'error');
+
+      // ── Auto-save log if enabled ──────────────────────────────
+      if (saveLogs && logLines.length > 0) {
+        api.send('save-log', { taskName: task, lines: logLines });
+      }
+    } catch (e) {
+      endProgress();
+      addLog('Unexpected error: ' + e.message, 'error');
+      notify('Error running task', 'error');
+    }
+
+    btn.classList.remove('running');
+    document.getElementById('status-text').textContent = 'System Ready';
+    isRunning = false;
+  });
+});
+
+// ─── SYSINFO ───────────────────────────────────────────────────
+async function loadSysInfo() {
+  const info = await api.invoke('get-sysinfo');
+  document.getElementById('chip-mem').textContent    = info.freeMem;
+  document.getElementById('chip-cpu').textContent    = info.cpus;
+  document.getElementById('chip-uptime').textContent = info.uptime;
+
+  const cards = [
+    { key:'Status',     val:`<span class="info-status-dot"></span>Online`, span:false },
+    { key:'Hostname',   val:info.hostname,                                  span:false },
+    { key:'Platform',   val:info.platform + ' ' + info.arch,               span:false },
+    { key:'OS Version', val:info.osVersion,                                 span:true  },
+    { key:'Total RAM',  val:info.totalMem,                                  span:false },
+    { key:'Free RAM',   val:info.freeMem,                                   span:false },
+    { key:'CPU Cores',  val:info.cpus,                                      span:false },
+    { key:'Uptime',     val:info.uptime,                                    span:false },
+  ];
+
+  const grid = document.getElementById('info-grid');
+  grid.innerHTML = cards.map(c => `
+    <div class="info-card${c.span ? ' span2' : ''}">
+      <div class="info-card-key">${c.key}</div>
+      <div class="info-card-val">${c.val}</div>
+    </div>`).join('');
+}
+
+loadSysInfo();
+
+// ─── THEMES ────────────────────────────────────────────────────
+document.querySelectorAll('.theme-dot').forEach(dot => {
+  dot.addEventListener('click', () => {
+    document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
+    dot.classList.add('active');
+    const theme = dot.dataset.theme;
+    document.documentElement.setAttribute('data-theme', theme === 'default' ? '' : theme);
+    notify('Theme: ' + (theme === 'default' ? 'Dark' : theme === 'light' ? 'Light' : 'Dark Blue'), 'info');
+  });
+});
+</script>
+</body>
+</html>

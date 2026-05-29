@@ -1,0 +1,49 @@
+═══════════════════════════════════════════════════
+  WinRevive — Build Instructions (Windows)
+═══════════════════════════════════════════════════
+
+REQUIREMENTS
+  • Node.js 18+  →  https://nodejs.org
+  • npm (comes with Node)
+  • Windows 10/11 (to build a Windows .exe)
+
+─────────────────────────────────────────────────
+STEP 1 — Install dependencies
+─────────────────────────────────────────────────
+  Open a terminal in the WinRevive folder and run:
+
+    npm install
+
+  This downloads Electron and electron-builder (~200 MB).
+
+─────────────────────────────────────────────────
+STEP 2 — Build the portable .exe
+─────────────────────────────────────────────────
+  Run:
+
+    npm run build
+
+  Output: dist\WinRevive.exe   ← single portable file, no install needed
+
+─────────────────────────────────────────────────
+STEP 2b — Build an installer instead (optional)
+─────────────────────────────────────────────────
+  Run:
+
+    npm run build-installer
+
+  Output: dist\WinRevive-Setup.exe   ← NSIS installer with uninstaller
+
+─────────────────────────────────────────────────
+STEP 3 — Run
+─────────────────────────────────────────────────
+  Just double-click dist\WinRevive.exe  — no installation required.
+
+  Logs are saved to:  %USERPROFILE%\WinRevive_Logs\
+
+─────────────────────────────────────────────────
+DEVELOPMENT (test without building)
+─────────────────────────────────────────────────
+  npm start
+
+═══════════════════════════════════════════════════
